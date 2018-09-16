@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Cash Register</title>
+	<link rel="stylesheet" href="./public/main.css" type="text/css">
+</head>
+<body>
+	<aside class="enter-cash">
+		<label for="penny">Penny: 
+			<input class="cidCash" id="penny" name="PENNY" type="number" step="0.01" value="0" min="0">
+		</label>
+		<label for="nickel">Nickel: 
+			<input class="cidCash" id="nickel" name="NICKEL" type="number" step="0.05" value="0" min="0">
+		</label>
+		<label for="dime">Dime: 
+			<input class="cidCash" id="dime" name="DIME" type="number" step="0.1" value="0" min="0">
+		</label>
+		<label for="quarter">Quarter: 
+			<input class="cidCash" id="quarter" name="QUARTER" type="number" step="0.25" value="0" min="0">
+		</label>
+		<label for="dollar">Dollar: 
+			<input class="cidCash" id="dollar" name="ONE" type="number" step="1" value="0" min="0">
+		</label>
+		<label for="five-dollars">Five Dollars: 
+			<input class="cidCash" id="five-dollars" name="FIVE" type="number" step="5" value="0" min="0">
+		</label>
+		<label for="ten-dollars">Ten Dollars: 
+			<input class="cidCash" id="ten-dollars" name="TEN" type="number" step="10" value="0" min="0">
+		</label>
+		<label for="twenty-dollars">Twenty Dollars: 
+			<input class="cidCash" id="twenty-dollars" name="TWENTY" type="number" step="20" value="0" min="0">
+		</label>
+		<label for="one-hundred-dollars">One Hundred Dollars: 
+			<input class="cidCash" id="one-hundred-dollars" name="ONE HUNDRED" type="number" step="100" value="0" min="0">
+		</label>
+	</aside>
+	<main>
+		<div id="header">
+			<img src="./public/images/cash-register.svg" alt="logo">
+			<h1>Cash Register</h1>
+			<img id="your-cash" src="./public/images/menu-btn.svg" alt="menu-btn" onclick="menuBtnHandler()">
+		</div>
+		<div id="description">
+			<p>Enter how much money you have in the cash register, specify the price of the product plus the customer's funds, and then check if you will have enough cash to give the change.</p>
+		</div>
+		<div id="cash-price-inputs">
+			<input class="cash-price" id="price" name="price" type="number" placeholder="Product Price" min="0">
+			<input class="cash-price" id="cash" name="cash" type="number" placeholder="Client's Cash" min="0">
+		</div>
+		<div id="cash-register-field">
+			<h2>Cash Register Status:</h2>
+			<h3 id="status"></h3>
+			<h2>Client's Change:</h2>
+			<h3 id="how-much"></h3>
+			<h3 id="change"></h3>
+			<button id="check" onclick="checkCashRegisterHandler()" disabled>Check</button>
+		</div>
+	</main>
+	
+</body>
+<script>
+	const cidCash = document.querySelectorAll('.cidCash');
+	const cashPrice = document.querySelectorAll('.cash-price');
+	const status = document.querySelector('#status');
+	const howMuch = document.querySelector('#how-much');
+	const change = document.querySelector('#change');
+	const check = document.querySelector('#check');
+	const menuBtn = document.querySelector('#your-cash');
+	const enterCash = document.querySelector('.enter-cash');
+
+	
+	cashPrice.forEach(el => {
+		el.addEventListener('input', () => {
+			return el.value === "" ? check.disabled = true : check.disabled = false;
+		});
+	});
+
+	function menuBtnHandler() {
+		enterCash.classList.toggle('show-menu');
+	}
+
+	function checkCashRegisterHandler() {
+		let cid = [];
+		let cashPriceList = [];
+		let price;
+		let cash;
+
+		const submitCidHandler = (() => {
+			cidCash.forEach(item => {
+			cid.push([item.name, Number(item.value)]);
+			});
+		})();
+
+		const enterCashPriceHandler = (() => {
+			cashPrice.forEach(item => {
+			cashPriceList.push(item.value);
+			price = Number(cashPriceList[0]);
+			cash = Number(cashPriceList[1]);
+			item.value = "";
+			if (cash < price) {
+				return (status.innerHTML = "-----", change.innerHTML = "Woaah, u need to pay the price!")
+			}
+			});
+		})();
+
+		const checkRegisterHandler = (() => {
+			let cashReg = {status: '', change: cid};
+			const changeToGive = Number(parseFloat(cash - price).toFixed(2));
+			let sumOfOurCash = getTotal(cid);
+			cashReg.status = getStatus(changeToGive, sumOfOurCash);
+
+			cashReg.change = clientChange(changeToGive, cid);
+
+			if (cashReg.status === "INSUFFICIENT_FUNDS" || changeToGive > getTotal(cashReg.change)) {
+			cashReg.status = "INSUFFICIENT_FUNDS";
+			return (status.innerHTML = cashReg.status, change.innerHTML = "You might need to borrow some money...")
+			}
+
+			if (cashReg.status === "CLOSED") {
+			cashReg.change = [...cid];
+			}
+
+			return (status.innerHTML = cashReg.status, change.innerHTML = cashReg.change.map((a, i, array) => array[i].toString().replace(",", " - ")).join(" || "))
+
+		})();
+		return check.disabled = true;
+	}
+
+	const getTotal = (arr) => arr.map((a, i, array) => array[i][1]).reduce((a, b) => a+b);
+
+	const getStatus = (changeToGive, sumOfOurCash) => changeToGive > sumOfOurCash ?
+	"INSUFFICIENT_FUNDS" : changeToGive < sumOfOurCash ? "OPEN" : "CLOSED";
+
+	const clientChange = (changeToGive, changeInDrawer) => {
+	  let change = [];
+	  const initialValue = { 
+	    "PENNY": 0.01,
+	    "NICKEL": 0.05,
+	    "DIME": 0.1,
+	    "QUARTER": 0.25,
+	    "ONE": 1,
+	    "FIVE": 5,
+	    "TEN": 10,
+	    "TWENTY": 20,
+	    "ONE HUNDRED": 100
+	  };
+
+	  for(let i = changeInDrawer.length - 1; i >= 0; i--) {
+	    const moneyType = changeInDrawer[i][0];
+	    const moneyTotalValue = changeInDrawer[i][1];
+	    const moneyInitialValue = initialValue[moneyType];
+	    let moneyQuantity = Number((moneyTotalValue / moneyInitialValue).toFixed(2));
+	    let moneyToGive = 0;
+
+	    while (changeToGive >= moneyInitialValue && moneyQuantity > 0) {
+	      changeToGive = Number((changeToGive - moneyInitialValue).toFixed(2));
+	      moneyQuantity--;
+	      moneyToGive++;
+	    }
+
+	    if(moneyToGive > 0) {
+	      change.push([moneyType, moneyToGive * moneyInitialValue]);
+	    }
+	  }
+	  return change;
+	}
+
+</script>
+</html>
